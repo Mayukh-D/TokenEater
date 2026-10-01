@@ -636,7 +636,8 @@ struct MonitoringView: View {
             gaugeGradient: gaugeGradient,
             zone: zone,
             resetText: resetText,
-            resetDate: resetDate
+            resetDate: resetDate,
+            name: embeddedClaudeColumn ? columnName(for: .claude) : nil
         )
     }
 
@@ -656,7 +657,7 @@ struct MonitoringView: View {
                     ProviderGlyph(provider: .claude, size: 11)
                         .foregroundStyle(gaugeColor)
                         .dsGlow(gaugeColor, radius: 4, opacity: 0.6)
-                    Text(MetricProvider.claude.displayName.uppercased() + " · PACING")
+                    Text(columnName(for: .claude).uppercased() + " · PACING")
                         .font(DS.Typography.micro)
                         .tracking(1.5)
                         .foregroundStyle(DS.Palette.textSecondary)

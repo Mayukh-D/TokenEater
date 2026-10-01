@@ -39,7 +39,7 @@ struct PopoverElementCellView: View {
                     pacing: pacing,
                     // The workweek schedule adjusts every weekly bucket (weekly +
                     // per-model Fable); only the intraday session is never adjusted.
-                    showWorkweekBadge: element.kind != .sessionPacing
+                    showWorkweekBadge: element.kind != .sessionPacing && element.kind != .workSessionPacing
                 )
             } else {
                 // Idle: the bucket exists (the cell only renders for available
@@ -90,7 +90,7 @@ struct PopoverElementCellView: View {
         switch element.kind {
         // `.codexWeeklyPacing` used to fall through to `default` and label
         // itself "Session", which was simply the wrong word on the cell.
-        case .weeklyPacing, .codexWeeklyPacing: return String(localized: "pacing.weekly.label")
+        case .weeklyPacing, .codexWeeklyPacing, .workWeeklyPacing: return String(localized: "pacing.weekly.label")
         case .fablePacing: return String(localized: "pacing.fable.label")
         default: return String(localized: "pacing.session.label")
         }
@@ -98,7 +98,7 @@ struct PopoverElementCellView: View {
 
     private var paceShortLabel: String {
         switch element.kind {
-        case .weeklyPacing, .codexWeeklyPacing: return String(localized: "pacing.weekly.label.short")
+        case .weeklyPacing, .codexWeeklyPacing, .workWeeklyPacing: return String(localized: "pacing.weekly.label.short")
         case .fablePacing: return String(localized: "pacing.fable.label.short")
         default: return String(localized: "pacing.session.label.short")
         }
