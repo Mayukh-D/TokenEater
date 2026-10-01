@@ -34,6 +34,28 @@
 > [!NOTE]
 > **This fork adds multiple Claude accounts.** It tracks a second Claude Code login (for example a personal and a work account) as a provider of its own, next to Claude and Codex, with no logging in and out. Everything else is [AThevon/TokenEater](https://github.com/AThevon/TokenEater), and all credit for the app goes there. The change is proposed upstream in [#284](https://github.com/AThevon/TokenEater/pull/284).
 
+<p align="center">
+  <img src="docs/fork/4-dashboard-all.png" alt="Dashboard in All mode: Claude, the second Claude account and OpenAI side by side" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/fork/1-popover-all.png" alt="Popover, All mode" width="100%"><br><sub><b>Popover, All</b><br>both accounts and Codex</sub></td>
+    <td align="center" width="33%"><img src="docs/fork/2-popover-work.png" alt="Popover in the second account's mode" width="100%"><br><sub><b>Second account's mode</b><br>its own plan, hero and pacing</sub></td>
+    <td align="center" width="33%"><img src="docs/fork/5-studio-menubar.png" alt="Studio, menu bar editor scoped to the second account" width="100%"><br><sub><b>Studio</b><br>its own segments and styles</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/fork/3-menubar.png" alt="Menu bar with pills for both Claude accounts" width="70%"><br>
+  <sub>Menu bar: your pills, then the second account's, labelled with its short name</sub>
+</p>
+
+<p align="center">
+  <img src="docs/fork/6-settings-providers.png" alt="Settings, Providers: the second account as its own provider card" width="85%"><br>
+  <sub>Settings &gt; Providers: each extra account gets the same card, toggle and connection buttons</sub>
+</p>
+
 ### What the fork adds
 
 | | |
