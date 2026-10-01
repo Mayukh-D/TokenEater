@@ -96,7 +96,7 @@ private struct ExtraAccountProviderCard: View {
                     .onChange(of: label) { _, new in
                         if new.count > 6 { label = String(new.prefix(6)) }
                     }
-                    .help(String(localized: "extraAccounts.label"))
+                    .help(String(localized: "extraAccounts.label.help"))
 
                 Button {
                     isChecking = true

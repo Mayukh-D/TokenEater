@@ -1091,4 +1091,5 @@
 "menuBarSegment.workWeekly" = "Hebdomadaire";
 "menuBarSegment.workSessionPacing" = "Pacing session";
 "menuBarSegment.workWeeklyPacing" = "Pacing hebdo";
-"extraAccounts.name" = "Nom :";
+"extraAccounts.name" = "Nom court :";
+"extraAccounts.label.help" = "6 caractères max, affiché dans le sélecteur, la barre de menus et le tableau de bord. Appuyez sur Entrée pour enregistrer.";

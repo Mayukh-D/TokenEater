@@ -1091,4 +1091,5 @@
 "menuBarSegment.workWeekly" = "Weekly";
 "menuBarSegment.workSessionPacing" = "Session pacing";
 "menuBarSegment.workWeeklyPacing" = "Weekly pacing";
-"extraAccounts.name" = "Name:";
+"extraAccounts.name" = "Short name:";
+"extraAccounts.label.help" = "Up to 6 characters, shown in the switcher, the menu bar and the dashboard. Press Return to save.";
