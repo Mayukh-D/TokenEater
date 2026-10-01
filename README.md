@@ -31,6 +31,45 @@
 
 ---
 
+> [!NOTE]
+> **This fork adds multiple Claude accounts.** It tracks a second Claude Code login (for example a personal and a work account) as a provider of its own, next to Claude and Codex, with no logging in and out. Everything else is [AThevon/TokenEater](https://github.com/AThevon/TokenEater), and all credit for the app goes there. The change is proposed upstream in [#284](https://github.com/AThevon/TokenEater/pull/284).
+
+### What the fork adds
+
+| | |
+|---|---|
+| **Its own mode** | A fourth dot in the switcher: All · Claude · your second account · Codex |
+| **Side by side** | All mode shows both Claude accounts in the popover, the menu bar and as a third dashboard column |
+| **Same design** | The second account uses the app's own cells, pills, hero and pacing cards, so nothing looks bolted on |
+| **Studio** | Every scope lists the second account's metrics under their own heading, to place and style like any other |
+| **Short name** | You choose how it is labelled (up to 6 characters, like `W` or `Work`) in Settings > Providers |
+| **Read-only** | Same contract as upstream: it reads each login from the Keychain and never writes or refreshes a token |
+
+### Set up a second account
+
+Claude Code keeps each config directory's login separately, so log the second account in under its own:
+
+```bash
+CLAUDE_CONFIG_DIR=~/.claude-work claude   # then /login with the other account
+```
+
+TokenEater picks it up on its own (or press **Scan & refresh** in Settings > Providers). macOS asks once to allow Keychain access for it; choose **Always Allow**.
+
+### Build this fork
+
+```bash
+git clone -b feat/multi-claude-accounts https://github.com/Mayukh-D/TokenEater.git
+cd TokenEater
+xcodegen generate
+xcodebuild -project TokenEater.xcodeproj -scheme TokenEaterApp -configuration Release \
+  -derivedDataPath build DEVELOPMENT_TEAM="" CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="-" build
+cp -R build/Build/Products/Release/TokenEater.app /Applications/
+```
+
+Local builds are not notarized, so the first launch needs right-click > Open. Needs Xcode and `brew install xcodegen`.
+
+---
+
 > **Requires a Claude Pro, Max, or Team plan, or the Codex CLI signed in with ChatGPT.** Either one is enough. Claude's free plan does not expose usage data, and Codex API-key accounts have no usage windows to track.
 
 <!--
