@@ -15,6 +15,12 @@ struct MonitoringView: View {
     @EnvironmentObject private var settingsStore: SettingsStore
     @EnvironmentObject private var sessionStore: SessionStore
     @EnvironmentObject private var vendorStatusStore: VendorStatusStore
+    @EnvironmentObject private var extraAccounts: ExtraAccountsStore
+
+    /// Renders only the Claude column, with no header or scroll view. All
+    /// mode embeds one of these, fed the second account's `UsageStore`, as
+    /// the extra Claude column.
+    var embeddedClaudeColumn = false
 
     /// Lightweight 7d daily-buckets store for the back-of-card stats.
     /// Loaded once on appear, refreshed if older than 60s. Owned by
@@ -33,6 +39,50 @@ struct MonitoringView: View {
     @Environment(\.glowIntensity) private var glowIntensity
 
     var body: some View {
+        if embeddedClaudeColumn {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                ProviderStatusNotice(provider: .claude)
+                blocks(for: .claude)
+            }
+        } else {
+            page
+        }
+    }
+
+    /// The second Claude account's column, shown in All next to Claude.
+    @ViewBuilder
+    private var workColumn: some View {
+        if let work = extraAccounts.workUsageStore {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                HStack(spacing: 6) {
+                    ProviderGlyph(provider: .claude, size: 12)
+                    Text(settingsStore.workAccountLabel ?? "")
+                        .font(.system(size: 11, weight: .heavy))
+                    if let email = extraAccounts.enabledAccounts.first.flatMap({ extraAccounts.usage[$0.service]?.email }) {
+                        Text(email)
+                            .font(.system(size: 11))
+                            .foregroundStyle(DS.Palette.textTertiary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                .foregroundStyle(DS.Palette.textSecondary)
+                MonitoringView(embeddedClaudeColumn: true, insightsStore: insightsStore)
+                    .environmentObject(work)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .transition(.glanceCard)
+        }
+    }
+
+    private var showsWorkColumn: Bool {
+        settingsStore.activeProviderMode == .all
+            && showsClaude
+            && settingsStore.workAccountLabel != nil
+            && extraAccounts.workUsageStore != nil
+    }
+
+    private var page: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 header
@@ -51,6 +101,9 @@ struct MonitoringView: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .transition(.glanceCard)
+                            if provider == .claude, showsWorkColumn {
+                                workColumn
+                            }
                         }
                     }
                 } else if let provider = visibleProviders.first {
@@ -170,7 +223,8 @@ struct MonitoringView: View {
     /// instead: there is nothing to compare, and half a comparison is worse
     /// than none.
     private var isComparing: Bool {
-        settingsStore.activeProviderMode == .all && visibleProviders.count > 1
+        settingsStore.activeProviderMode == .all
+            && visibleProviders.count + (showsWorkColumn ? 1 : 0) > 1
     }
 
     /// Renders one provider's blocks, in the order Studio put them.

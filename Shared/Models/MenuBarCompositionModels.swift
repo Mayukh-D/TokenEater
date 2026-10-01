@@ -64,7 +64,7 @@ enum ProviderMode: String, Codable, CaseIterable, Identifiable {
         case .all: return String(localized: "providerMode.all")
         case .claude: return "Claude"
         case .codex: return "Codex"
-        case .claudeWork: return "Claude Work"
+        case .claudeWork: return String(localized: "providerMode.claudeWork")
         }
     }
 

@@ -8,100 +8,157 @@ import SwiftUI
 struct ClaudeAccountScope<Content: View>: View {
     @EnvironmentObject private var settingsStore: SettingsStore
     @EnvironmentObject private var extraAccounts: ExtraAccountsStore
+    @EnvironmentObject private var usageStore: UsageStore
     @ViewBuilder let content: () -> Content
 
+    // One branch, always: an if/else here gives the two cases different view
+    // identities, so a mode switch rebuilt the whole window and Studio's
+    // onDisappear snapped the mode straight back. Only the injected store
+    // changes now.
     var body: some View {
-        if settingsStore.activeProviderMode == .claudeWork, let work = extraAccounts.workUsageStore {
-            content().environmentObject(work)
-        } else {
-            content()
-        }
+        content().environmentObject(scopedStore)
+    }
+
+    private var scopedStore: UsageStore {
+        guard settingsStore.activeProviderMode == .claudeWork,
+              let work = extraAccounts.workUsageStore else { return usageStore }
+        return work
     }
 }
 
 // MARK: - Settings
 
-/// Settings > Providers card: lists the extra logins found in the Keychain,
-/// with a label and an on/off switch for each.
+/// Settings > Providers: one `ProviderCard` per extra Claude login, in the
+/// same card language as Claude and Codex above it.
 struct ExtraAccountsSettingsCard: View {
     @EnvironmentObject private var extraAccounts: ExtraAccountsStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                cardLabel("Other Claude accounts")
+                cardLabel(String(localized: "extraAccounts.title"))
                 Spacer()
-                Button(extraAccounts.isRefreshing ? "Refreshing…" : "Scan & refresh") {
+                Button(extraAccounts.isRefreshing ? String(localized: "extraAccounts.refreshing") : String(localized: "extraAccounts.scan")) {
                     extraAccounts.discover()
                     Task { await extraAccounts.refresh() }
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(DS.Palette.textTertiary)
                 .disabled(extraAccounts.isRefreshing)
             }
+            .padding(.top, DS.Spacing.xs)
 
             if extraAccounts.accounts.isEmpty {
-                Text("No other logins found. Log in to another account with a separate config dir, e.g. CLAUDE_CONFIG_DIR=~/.claude-work claude, then press Scan.")
+                Text("extraAccounts.empty")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(DS.Palette.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, DS.Spacing.xs)
             } else {
                 ForEach(extraAccounts.accounts) { account in
-                    ExtraAccountSettingsRow(account: account, usage: extraAccounts.usage[account.service])
+                    ExtraAccountProviderCard(account: account)
                 }
             }
         }
-        .padding(DS.Spacing.sm)
-        .background(RoundedRectangle(cornerRadius: 10).fill(.white.opacity(0.04)))
     }
 }
 
-private struct ExtraAccountSettingsRow: View {
+private struct ExtraAccountProviderCard: View {
     let account: ExtraClaudeAccount
-    let usage: ExtraAccountUsage?
     @EnvironmentObject private var extraAccounts: ExtraAccountsStore
+
+    @State private var enabled = true
     @State private var label = ""
+    @State private var isChecking = false
+
+    private var usage: ExtraAccountUsage? { extraAccounts.usage[account.service] }
+
+    /// The account's own store when it is the work account, which knows the
+    /// plan and organization; nil for any further account.
+    private var store: UsageStore? {
+        extraAccounts.enabledAccounts.first?.service == account.service ? extraAccounts.workUsageStore : nil
+    }
+
+    private var isLive: Bool {
+        guard account.enabled else { return false }
+        if let store { return store.hasConfig && store.errorState == .none }
+        return usage?.error == nil && usage?.fiveHour != nil
+    }
+
+    /// Same "lead · chip · chip" shape `ProviderCard` splits, as for Claude.
+    private var status: String {
+        if let error = usage?.error, store == nil { return error }
+        if let store, !store.hasConfig {
+            return String(localized: "settings.providers.claude.connecting")
+        }
+        var parts = [String(localized: "settings.providers.claude.connected")]
+        if let store, store.planType != .unknown { parts.append(store.planType.displayLabel) }
+        if let email = usage?.email { parts.append(email) }
+        return parts.joined(separator: " · ")
+    }
 
     var body: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Button {
-                extraAccounts.setEnabled(!account.enabled, for: account.service)
-            } label: {
-                Image(systemName: account.enabled ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(account.enabled ? .green : .white.opacity(0.4))
-            }
-            .buttonStyle(.plain)
-            .help(account.enabled ? "Shown in the menu bar and popover" : "Hidden")
+        ProviderCard(
+            provider: .claude,
+            name: "Claude · \(account.label)",
+            isEnabled: account.enabled,
+            isLive: isLive,
+            status: status,
+            enabled: $enabled
+        ) {
+            HStack(spacing: 6) {
+                TextField(String(localized: "extraAccounts.label"), text: $label)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 11, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 44)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .onSubmit { extraAccounts.setLabel(label, for: account.service) }
+                    .onChange(of: label) { _, new in
+                        if new.count > 6 { label = String(new.prefix(6)) }
+                    }
+                    .help(String(localized: "extraAccounts.label"))
 
-            TextField("Label", text: $label)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 64)
-                .onSubmit { extraAccounts.setLabel(label, for: account.service) }
-                .onChange(of: label) { _, new in
-                    if new.count > 6 { label = String(new.prefix(6)) }
+                Button {
+                    isChecking = true
+                    Task {
+                        if let store { await store.refresh(force: true) }
+                        await extraAccounts.refresh()
+                        isChecking = false
+                    }
+                } label: {
+                    Text(isChecking ? String(localized: "extraAccounts.refreshing") : String(localized: "extraAccounts.check"))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(DS.Palette.textSecondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule().fill(Color.white.opacity(0.06))
+                                .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
+                        )
                 }
+                .buttonStyle(.plain)
+                .disabled(isChecking)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(usage?.email ?? "Not read yet")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.8))
-                if let error = usage?.error {
-                    Text(error).font(.system(size: 10)).foregroundStyle(.orange.opacity(0.85))
+                Button {
+                    extraAccounts.remove(account.service)
+                } label: {
+                    Image(systemName: "xmark").font(.system(size: 10, weight: .semibold))
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(DS.Palette.textTertiary)
+                .help(String(localized: "extraAccounts.forget"))
             }
-            Spacer(minLength: 0)
-
-            Button {
-                extraAccounts.remove(account.service)
-            } label: {
-                Image(systemName: "xmark").font(.system(size: 10))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.white.opacity(0.4))
-            .help("Forget this account (Scan finds it again)")
         }
-        .onAppear { label = account.label }
+        .onAppear {
+            enabled = account.enabled
+            label = account.label
+        }
+        .onChange(of: enabled) { _, new in
+            if new != account.enabled { extraAccounts.setEnabled(new, for: account.service) }
+        }
         .onDisappear { extraAccounts.setLabel(label, for: account.service) }
     }
 }

@@ -63,8 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         historyWidgetStore.start()
 
         updateStore.checkBrewMigration()
-        // Fork with multi-account support: the official updater would replace it.
-        // updateStore.checkForUpdates()
+        updateStore.checkForUpdates()
 
         monitorCancellable = settingsStore.overlay.$overlayEnabled
             .dropFirst()

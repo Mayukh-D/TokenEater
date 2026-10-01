@@ -102,7 +102,7 @@ struct ProviderModeSwitcher: View {
                         .frame(width: size.font - 1, height: size.font - 1)
                 }
                 if size.showsLabel {
-                    Text(mode == .claudeWork ? "Claude \(settingsStore.workAccountLabel ?? "Work")" : mode.localizedLabel)
+                    Text(mode == .claudeWork ? settingsStore.workAccountLabel.map { "Claude \($0)" } ?? mode.localizedLabel : mode.localizedLabel)
                 }
             }
             .font(.system(size: size.font, weight: isActive ? .semibold : .medium))

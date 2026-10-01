@@ -170,8 +170,8 @@ final class ExtraAccountsStore: ObservableObject {
         let read = await Task.detached { SecurityCLIReader(service: service).read() }.value
         guard let token = read.token else {
             result.error = read.failure == .accessDenied
-                ? "Keychain access denied"
-                : "No login found. Run Claude Code with this config dir."
+                ? String(localized: "extraAccounts.error.denied")
+                : String(localized: "extraAccounts.error.noLogin")
             return result
         }
 
@@ -183,9 +183,9 @@ final class ExtraAccountsStore: ObservableObject {
             result.sevenDayResetsAt = response.sevenDay?.resetsAtDate
             result.error = nil
         } catch APIError.tokenExpired {
-            result.error = "Login expired. Open Claude Code with this account."
+            result.error = String(localized: "extraAccounts.error.expired")
         } catch APIError.rateLimited {
-            result.error = "Rate limited, will retry"
+            result.error = String(localized: "extraAccounts.error.rateLimited")
         } catch {
             result.error = error.localizedDescription
         }

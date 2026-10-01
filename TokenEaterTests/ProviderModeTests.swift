@@ -12,6 +12,7 @@ struct ProviderModeTests {
         "popoverComposition", "popoverComposition.claude", "popoverComposition.codex",
         "menuBarComposition", "menuBarComposition.claude", "menuBarComposition.codex",
         "activeProviderMode", "codexEnabled",
+        "popoverComposition.claudeWork", "menuBarComposition.claudeWork", "dashboardComposition.claudeWork",
     ]
 
     private func clean() {
@@ -179,6 +180,45 @@ struct ProviderModeTests {
         // Codex alone offers nothing to switch between either.
         store.claudeEnabled = false
         #expect(store.availableProviderModes.isEmpty)
+    }
+
+    @Test("A second Claude account adds its own mode right after Claude")
+    func workAccountAddsAMode() {
+        let store = makeStore()
+        defer { clean() }
+
+        store.claudeEnabled = true
+        store.codexEnabled = false
+        store.workAccountLabel = "W"
+        // Two Claude accounts are already two things to switch between.
+        #expect(store.availableProviderModes == [.all, .claude, .claudeWork])
+
+        store.codexEnabled = true
+        #expect(store.availableProviderModes == [.all, .claude, .claudeWork, .codex])
+
+        // The second account rides on Claude being on.
+        store.claudeEnabled = false
+        #expect(!store.availableProviderModes.contains(.claudeWork))
+    }
+
+    @Test("Losing the second account leaves its mode for Claude")
+    func workAccountGoneFallsBackToClaude() {
+        let store = makeStore()
+        defer { clean() }
+
+        store.claudeEnabled = true
+        store.workAccountLabel = "W"
+        store.activeProviderMode = .claudeWork
+        store.workAccountLabel = nil
+        #expect(store.activeProviderMode == .claude)
+    }
+
+    @Test("Claude Work shows Claude metrics and stores its own layout")
+    func workModeIsClaude() {
+        #expect(ProviderMode.claudeWork.provider == .claude)
+        #expect(ProviderMode.claudeWork.storageSuffix == ".claudeWork")
+        // `.claude` must stay the first mode for the Claude provider.
+        #expect(ProviderMode.allCases.first { $0.provider == .claude } == .claude)
     }
 
     // MARK: - Visibility rule
