@@ -82,6 +82,9 @@ private struct ExtraAccountProviderCard: View {
             enabled: $enabled
         ) {
             HStack(spacing: 6) {
+                Text("extraAccounts.name")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(DS.Palette.textTertiary)
                 TextField(String(localized: "extraAccounts.label"), text: $label)
                     .textFieldStyle(.plain)
                     .font(.system(size: 11, weight: .semibold))

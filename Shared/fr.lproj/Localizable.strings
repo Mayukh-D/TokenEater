@@ -1091,3 +1091,4 @@
 "menuBarSegment.workWeekly" = "Hebdomadaire";
 "menuBarSegment.workSessionPacing" = "Pacing session";
 "menuBarSegment.workWeeklyPacing" = "Pacing hebdo";
+"extraAccounts.name" = "Nom :";
