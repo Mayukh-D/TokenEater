@@ -75,6 +75,8 @@ struct ProvidersSectionView: View {
                 }
                 resultLine(codexResult?.message, success: codexResult?.success ?? false)
 
+                ExtraAccountsSettingsCard()
+
                 // App-level, not provider-level: it reports on the whole
                 // install, and sitting inside one provider's card implied it
                 // only covered that one.
