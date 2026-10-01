@@ -247,31 +247,6 @@ final class ExtraAccountsStore: ObservableObject {
     }
 
     // MARK: - Display
-
-    /// What the menu bar draws after the main account: one labelled pair of
-    /// pills per enabled account that has data.
-    var menuBarSegments: [MenuBarRenderer.ExtraAccountSegment] {
-        enabledAccounts.compactMap { account in
-            if account.service == workService, let store = workUsageStore {
-                guard store.hasConfig, store.errorState == .none, store.lastUpdate != nil else { return nil }
-                return MenuBarRenderer.ExtraAccountSegment(
-                    label: account.label,
-                    fiveHourPct: store.fiveHourPct,
-                    fiveHourResetDate: store.lastUsage?.fiveHour?.resetsAtDate,
-                    sevenDayPct: store.sevenDayPct,
-                    sevenDayResetDate: store.lastUsage?.sevenDay?.resetsAtDate
-                )
-            }
-            guard let u = usage[account.service], u.error == nil, u.fiveHour != nil || u.sevenDay != nil else { return nil }
-            return MenuBarRenderer.ExtraAccountSegment(
-                label: account.label,
-                fiveHourPct: u.fiveHour.map { Int($0.rounded()) },
-                fiveHourResetDate: u.fiveHourResetsAt,
-                sevenDayPct: u.sevenDay.map { Int($0.rounded()) },
-                sevenDayResetDate: u.sevenDayResetsAt
-            )
-        }
-    }
 }
 
 /// The work account has no Claude Desktop login to fall back on: its token

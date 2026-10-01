@@ -40,9 +40,16 @@ struct MonitoringView: View {
 
     var body: some View {
         if embeddedClaudeColumn {
+            // The second account's column: this view runs with that account's
+            // UsageStore injected, so the Claude blocks draw its numbers. The
+            // block list is filtered for `.claudeWork`, rendered as Claude.
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 ProviderStatusNotice(provider: .claude)
-                blocks(for: .claude)
+                ForEach(settingsStore.dashboardComposition.visibleBlocks) { block in
+                    if block.providers.contains(.claudeWork) {
+                        blockContent(block, for: .claude)
+                    }
+                }
             }
         } else {
             page
@@ -75,13 +82,6 @@ struct MonitoringView: View {
         }
     }
 
-    private var showsWorkColumn: Bool {
-        settingsStore.activeProviderMode == .all
-            && showsClaude
-            && settingsStore.workAccountLabel != nil
-            && extraAccounts.workUsageStore != nil
-    }
-
     private var page: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
@@ -95,17 +95,20 @@ struct MonitoringView: View {
                 if isComparing {
                     HStack(alignment: .top, spacing: DS.Spacing.md) {
                         ForEach(visibleProviders) { provider in
-                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                                ProviderStatusNotice(provider: provider)
-                                blocks(for: provider)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .transition(.glanceCard)
-                            if provider == .claude, showsWorkColumn {
+                            if provider == .claudeWork {
                                 workColumn
+                            } else {
+                                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                                    ProviderStatusNotice(provider: provider)
+                                    blocks(for: provider)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .transition(.glanceCard)
                             }
                         }
                     }
+                } else if visibleProviders.first == .claudeWork {
+                    workColumn
                 } else if let provider = visibleProviders.first {
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         ProviderStatusNotice(provider: provider)
@@ -223,8 +226,7 @@ struct MonitoringView: View {
     /// instead: there is nothing to compare, and half a comparison is worse
     /// than none.
     private var isComparing: Bool {
-        settingsStore.activeProviderMode == .all
-            && visibleProviders.count + (showsWorkColumn ? 1 : 0) > 1
+        settingsStore.activeProviderMode == .all && visibleProviders.count > 1
     }
 
     /// Renders one provider's blocks, in the order Studio put them.
@@ -294,6 +296,11 @@ struct MonitoringView: View {
             footerPills
         case (.footer, .codex):
             CodexFooterPills()
+
+        // Drawn by the embedded column (`workColumn`) as Claude blocks over
+        // the second account's store, never through this switch.
+        case (_, .claudeWork):
+            EmptyView()
         }
     }
 
@@ -456,6 +463,7 @@ struct MonitoringView: View {
                         switch provider {
                         case .claude: Task { await usageStore.refresh(force: true) }
                         case .codex:  Task { await codexStore.refresh(force: true) }
+                        case .claudeWork: Task { await extraAccounts.workUsageStore?.refresh(force: true) }
                         }
                     }
                 } label: {

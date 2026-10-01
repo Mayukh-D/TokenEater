@@ -19,8 +19,19 @@ import Foundation
 enum MetricProvider: String, CaseIterable, Identifiable {
     case claude
     case codex
+    /// A second Claude Code login (its own `CLAUDE_CONFIG_DIR`), tracked as a
+    /// provider of its own so every surface can place it next to Claude.
+    case claudeWork
 
     var id: String { rawValue }
+
+    /// The company behind the numbers. A second Claude account is still
+    /// Claude: same capabilities, same status page, same local logs.
+    var vendor: MetricProvider { self == .claudeWork ? .claude : self }
+
+    /// One entry per vendor, for surfaces that compare what each vendor
+    /// supports (coverage matrix, support badges) rather than list accounts.
+    static let vendors: [MetricProvider] = [.claude, .codex]
 
     /// The name the app puts in front of a user, and deliberately the
     /// provider rather than the tool: the two peers are Claude and OpenAI,
@@ -30,6 +41,7 @@ enum MetricProvider: String, CaseIterable, Identifiable {
         switch self {
         case .claude: return "Claude"
         case .codex: return "OpenAI"
+        case .claudeWork: return String(localized: "providerMode.claudeWork")
         }
     }
 }
@@ -44,9 +56,7 @@ enum ProviderMode: String, Codable, CaseIterable, Identifiable {
     case all
     case claude
     case codex
-    /// A second Claude Code login (its own CLAUDE_CONFIG_DIR). Shows the
-    /// Claude metrics, read from that account's own UsageStore. Declared last
-    /// so `allCases.first { $0.provider == .claude }` still finds `.claude`.
+    /// The second Claude Code login, as its own provider.
     case claudeWork
 
     var id: String { rawValue }
@@ -54,8 +64,9 @@ enum ProviderMode: String, Codable, CaseIterable, Identifiable {
     var provider: MetricProvider? {
         switch self {
         case .all: return nil
-        case .claude, .claudeWork: return .claude
+        case .claude: return .claude
         case .codex: return .codex
+        case .claudeWork: return .claudeWork
         }
     }
 
@@ -87,9 +98,12 @@ enum MenuBarSegmentKind: String, Codable, CaseIterable, Identifiable {
     // Codex usage. Additive raw values, same lossy-decode property as the
     // popover kinds: an older build drops what it does not recognise.
     case codexSession, codexWeekly
+    // Second Claude account. Same additive-raw-value property as Codex.
+    case workSession, workWeekly
     // Pacing (delta vs linear pace)
     case sessionPacing, weeklyPacing, fablePacing
     case codexSessionPacing, codexWeeklyPacing
+    case workSessionPacing, workWeeklyPacing
     // Status / time
     case sessionReset, serviceStatus
 
@@ -98,11 +112,29 @@ enum MenuBarSegmentKind: String, Codable, CaseIterable, Identifiable {
     var isPacing: Bool {
         switch self {
         case .sessionPacing, .weeklyPacing, .fablePacing,
-             .codexSessionPacing, .codexWeeklyPacing:
+             .codexSessionPacing, .codexWeeklyPacing,
+             .workSessionPacing, .workWeeklyPacing:
             return true
         default:
             return false
         }
+    }
+
+    /// The Claude kind a second-account kind mirrors. It renders exactly like
+    /// that kind, from the second account's data.
+    var claudeEquivalent: MenuBarSegmentKind? {
+        switch self {
+        case .workSession: return .session
+        case .workWeekly: return .weekly
+        case .workSessionPacing: return .sessionPacing
+        case .workWeeklyPacing: return .weeklyPacing
+        default: return nil
+        }
+    }
+
+    /// The reverse: the second-account kind for a Claude kind, if it has one.
+    var workEquivalent: MenuBarSegmentKind? {
+        Self.allCases.first { $0.claudeEquivalent == self }
     }
 
     var id: String { rawValue }
@@ -112,10 +144,11 @@ enum MenuBarSegmentKind: String, Codable, CaseIterable, Identifiable {
     var family: Family {
         switch self {
         case .session, .weekly, .sonnet, .fable, .extraCredits,
-             .codexSession, .codexWeekly:
+             .codexSession, .codexWeekly, .workSession, .workWeekly:
             return .usage
         case .sessionPacing, .weeklyPacing, .fablePacing,
-             .codexSessionPacing, .codexWeeklyPacing:
+             .codexSessionPacing, .codexWeeklyPacing,
+             .workSessionPacing, .workWeeklyPacing:
             return .pacing
         case .sessionReset, .serviceStatus:
             return .status
@@ -142,7 +175,8 @@ enum MenuBarSegmentKind: String, Codable, CaseIterable, Identifiable {
     var isPresenceGated: Bool {
         switch self {
         case .fable, .extraCredits, .fablePacing,
-             .codexSession, .codexWeekly, .codexSessionPacing, .codexWeeklyPacing:
+             .codexSession, .codexWeekly, .codexSessionPacing, .codexWeeklyPacing,
+             .workSession, .workWeekly, .workSessionPacing, .workWeeklyPacing:
             return true
         default:
             return false
@@ -155,6 +189,8 @@ enum MenuBarSegmentKind: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .codexSession, .codexWeekly, .codexSessionPacing, .codexWeeklyPacing:
             return .codex
+        case .workSession, .workWeekly, .workSessionPacing, .workWeeklyPacing:
+            return .claudeWork
         case .session, .weekly, .sonnet, .fable, .extraCredits,
              .sessionPacing, .weeklyPacing, .fablePacing, .sessionReset:
             return .claude
@@ -416,6 +452,9 @@ extension MenuBarSegmentKind {
         case .codexWeekly: return "calendar.badge.clock"
         case .sessionPacing, .weeklyPacing, .fablePacing: return "speedometer"
         case .codexSessionPacing, .codexWeeklyPacing: return "speedometer"
+        case .workSession: return "bolt.fill"
+        case .workWeekly: return "calendar"
+        case .workSessionPacing, .workWeeklyPacing: return "speedometer"
         case .sessionReset: return "clock.arrow.circlepath"
         case .serviceStatus: return "dot.radiowaves.left.and.right"
         }

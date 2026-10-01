@@ -6,9 +6,7 @@ struct MenuBarPopoverView: View {
     @EnvironmentObject private var settingsStore: SettingsStore
 
     var body: some View {
-        ClaudeAccountScope {
-            ComposablePopoverView()
-        }
-        .environment(\.glowIntensity, settingsStore.glowIntensity)
+        ComposablePopoverView()
+            .environment(\.glowIntensity, settingsStore.glowIntensity)
     }
 }

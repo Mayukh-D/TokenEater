@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PopoverElementCellView: View {
     @EnvironmentObject private var usageStore: UsageStore
+    @EnvironmentObject private var extraAccounts: ExtraAccountsStore
     @EnvironmentObject private var codexStore: CodexUsageStore
 
     let element: PopoverElement
@@ -16,23 +17,23 @@ struct PopoverElementCellView: View {
     var body: some View {
         switch element.style {
         case .gaugeRing:
-            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore) {
+            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore, work: extraAccounts.workUsageStore) {
                 GaugeRingCell(snapshot: snapshot, width: element.effectiveWidth, showReset: element.options.showReset)
             }
         case .chip:
-            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore) {
+            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore, work: extraAccounts.workUsageStore) {
                 ChipCell(snapshot: snapshot, width: element.effectiveWidth, showReset: element.options.showReset)
             }
         case .arc:
-            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore) {
+            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore, work: extraAccounts.workUsageStore) {
                 ArcCell(snapshot: snapshot, content: element.options.content)
             }
         case .bigText:
-            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore) {
+            if let snapshot = PopoverMetricResolver.usageSnapshot(for: element.kind, usage: usageStore, codex: codexStore, work: extraAccounts.workUsageStore) {
                 BigTextCell(snapshot: snapshot, width: element.effectiveWidth, content: element.options.content)
             }
         case .paceBar:
-            if let pacing = PopoverMetricResolver.pacing(for: element.kind, usage: usageStore, codex: codexStore) {
+            if let pacing = PopoverMetricResolver.pacing(for: element.kind, usage: usageStore, codex: codexStore, work: extraAccounts.workUsageStore) {
                 PopoverPacingRow(
                     label: paceLabel,
                     pacing: pacing,
@@ -46,13 +47,13 @@ struct PopoverElementCellView: View {
                 PaceIdleRow(label: paceLabel, provider: element.kind.provider)
             }
         case .paceTile:
-            if let pacing = PopoverMetricResolver.pacing(for: element.kind, usage: usageStore, codex: codexStore) {
+            if let pacing = PopoverMetricResolver.pacing(for: element.kind, usage: usageStore, codex: codexStore, work: extraAccounts.workUsageStore) {
                 PaceTileCell(label: paceShortLabel, provider: element.kind.provider, pacing: pacing)
             } else {
                 PaceIdleCardCell(label: paceShortLabel, provider: element.kind.provider, verticalPadding: 10)
             }
         case .paceText:
-            if let pacing = PopoverMetricResolver.pacing(for: element.kind, usage: usageStore, codex: codexStore) {
+            if let pacing = PopoverMetricResolver.pacing(for: element.kind, usage: usageStore, codex: codexStore, work: extraAccounts.workUsageStore) {
                 PaceTextCell(label: paceShortLabel, provider: element.kind.provider, pacing: pacing)
             } else {
                 PaceIdleCardCell(label: paceShortLabel, provider: element.kind.provider, verticalPadding: 8)
@@ -568,6 +569,7 @@ private struct PopoverQuitButtonCell: View {
 private struct PlanBadgeCell: View {
     @EnvironmentObject private var usageStore: UsageStore
     @EnvironmentObject private var codexStore: CodexUsageStore
+    @EnvironmentObject private var extraAccounts: ExtraAccountsStore
     @EnvironmentObject private var settingsStore: SettingsStore
 
     private var visible: [MetricProvider] {
@@ -587,6 +589,10 @@ private struct PlanBadgeCell: View {
                     if codexStore.planType != .unknown {
                         badge(provider, codexStore.planType.displayLabel,
                               codexStore.planType.badgeColor)
+                    }
+                case .claudeWork:
+                    if let work = extraAccounts.workUsageStore, work.planType != .unknown {
+                        badge(provider, work.planType.displayLabel, work.planType.badgeColor)
                     }
                 }
             }

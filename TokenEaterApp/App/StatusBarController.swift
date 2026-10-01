@@ -453,12 +453,11 @@ final class StatusBarController: NSObject {
             menuBarRepaintDeferred = true
             return
         }
-        let data = MenuBarRenderer.RenderData.live(usage: usageStore, theme: themeStore, settings: settingsStore, vendor: vendorStatusStore, codex: codexStore)
-        let extras = extraAccountsStore.menuBarSegments
-        let base = MenuBarRenderer.render(data)
-        statusItem.button?.image = extras.isEmpty
-            ? base
-            : MenuBarRenderer.appendingExtraAccounts(extras, to: base, data: data)
+        let image = MenuBarRenderer.render(
+            .live(usage: usageStore, theme: themeStore, settings: settingsStore, vendor: vendorStatusStore, codex: codexStore,
+                  work: extraAccountsStore.workUsageStore)
+        )
+        statusItem.button?.image = image
     }
 
     /// Run a 1-second redraw ONLY while an outage badge is visible, so the
@@ -785,7 +784,7 @@ final class StatusBarController: NSObject {
             return
         }
 
-        let appView = ClaudeAccountScope { MainAppView() }
+        let appView = MainAppView()
             .environmentObject(usageStore)
             .environmentObject(codexStore)
             .environmentObject(themeStore)

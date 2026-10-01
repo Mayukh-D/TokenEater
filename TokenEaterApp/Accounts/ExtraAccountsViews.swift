@@ -1,31 +1,5 @@
 import SwiftUI
 
-// MARK: - Account scope
-
-/// In Claude Work mode, hands every view below it the work account's
-/// `UsageStore` in place of the main one. All the existing Claude cells,
-/// the plan badge, pacing and the dashboard then show that account as-is.
-struct ClaudeAccountScope<Content: View>: View {
-    @EnvironmentObject private var settingsStore: SettingsStore
-    @EnvironmentObject private var extraAccounts: ExtraAccountsStore
-    @EnvironmentObject private var usageStore: UsageStore
-    @ViewBuilder let content: () -> Content
-
-    // One branch, always: an if/else here gives the two cases different view
-    // identities, so a mode switch rebuilt the whole window and Studio's
-    // onDisappear snapped the mode straight back. Only the injected store
-    // changes now.
-    var body: some View {
-        content().environmentObject(scopedStore)
-    }
-
-    private var scopedStore: UsageStore {
-        guard settingsStore.activeProviderMode == .claudeWork,
-              let work = extraAccounts.workUsageStore else { return usageStore }
-        return work
-    }
-}
-
 // MARK: - Settings
 
 /// Settings > Providers: one `ProviderCard` per extra Claude login, in the

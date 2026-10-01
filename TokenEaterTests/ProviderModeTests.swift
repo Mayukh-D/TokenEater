@@ -201,7 +201,7 @@ struct ProviderModeTests {
         #expect(!store.availableProviderModes.contains(.claudeWork))
     }
 
-    @Test("Losing the second account leaves its mode for Claude")
+    @Test("Losing the second account leaves its mode, like turning a provider off")
     func workAccountGoneFallsBackToClaude() {
         let store = makeStore()
         defer { clean() }
@@ -210,15 +210,31 @@ struct ProviderModeTests {
         store.workAccountLabel = "W"
         store.activeProviderMode = .claudeWork
         store.workAccountLabel = nil
-        #expect(store.activeProviderMode == .claude)
+        #expect(store.activeProviderMode == .all)
     }
 
-    @Test("Claude Work shows Claude metrics and stores its own layout")
-    func workModeIsClaude() {
-        #expect(ProviderMode.claudeWork.provider == .claude)
+    @Test("Claude Work is its own provider, a Claude account underneath")
+    func workModeIsItsOwnProvider() {
+        #expect(ProviderMode.claudeWork.provider == .claudeWork)
         #expect(ProviderMode.claudeWork.storageSuffix == ".claudeWork")
-        // `.claude` must stay the first mode for the Claude provider.
-        #expect(ProviderMode.allCases.first { $0.provider == .claude } == .claude)
+        #expect(MetricProvider.claudeWork.vendor == .claude)
+        #expect(!MetricProvider.vendors.contains(.claudeWork))
+    }
+
+    @Test("Every second-account kind mirrors a Claude kind and back")
+    func workKindsMirrorClaude() {
+        for kind in PopoverElementKind.allCases where kind.provider == .claudeWork {
+            let claude = kind.claudeEquivalent
+            #expect(claude?.provider == .claude)
+            #expect(claude?.family == kind.family)
+            #expect(claude?.workEquivalent == kind)
+        }
+        for kind in MenuBarSegmentKind.allCases where kind.provider == .claudeWork {
+            let claude = kind.claudeEquivalent
+            #expect(claude?.provider == .claude)
+            #expect(claude?.family == kind.family)
+            #expect(claude?.workEquivalent == kind)
+        }
     }
 
     // MARK: - Visibility rule

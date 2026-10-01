@@ -1083,3 +1083,11 @@
 "extraAccounts.error.expired" = "Login expired. Open Claude Code with this account.";
 "extraAccounts.error.rateLimited" = "Rate limited, will retry";
 "extraAccounts.check" = "Check connection";
+"popoverElement.workSession" = "Session (5h)";
+"popoverElement.workWeekly" = "Weekly";
+"popoverElement.workSessionPacing" = "Session pacing";
+"popoverElement.workWeeklyPacing" = "Weekly pacing";
+"menuBarSegment.workSession" = "Session (5h)";
+"menuBarSegment.workWeekly" = "Weekly";
+"menuBarSegment.workSessionPacing" = "Session pacing";
+"menuBarSegment.workWeeklyPacing" = "Weekly pacing";

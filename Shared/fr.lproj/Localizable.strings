@@ -1083,3 +1083,11 @@
 "extraAccounts.error.expired" = "Connexion expirée. Ouvrez Claude Code avec ce compte.";
 "extraAccounts.error.rateLimited" = "Limite atteinte, nouvel essai bientôt";
 "extraAccounts.check" = "Vérifier la connexion";
+"popoverElement.workSession" = "Session (5h)";
+"popoverElement.workWeekly" = "Hebdomadaire";
+"popoverElement.workSessionPacing" = "Pacing session";
+"popoverElement.workWeeklyPacing" = "Pacing hebdo";
+"menuBarSegment.workSession" = "Session (5h)";
+"menuBarSegment.workWeekly" = "Hebdomadaire";
+"menuBarSegment.workSessionPacing" = "Pacing session";
+"menuBarSegment.workWeeklyPacing" = "Pacing hebdo";
