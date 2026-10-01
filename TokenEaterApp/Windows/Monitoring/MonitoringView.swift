@@ -61,19 +61,6 @@ struct MonitoringView: View {
     private var workColumn: some View {
         if let work = extraAccounts.workUsageStore {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                HStack(spacing: 6) {
-                    ProviderGlyph(provider: .claude, size: 12)
-                    Text(settingsStore.workAccountLabel ?? "")
-                        .font(.system(size: 11, weight: .heavy))
-                    if let email = extraAccounts.enabledAccounts.first.flatMap({ extraAccounts.usage[$0.service]?.email }) {
-                        Text(email)
-                            .font(.system(size: 11))
-                            .foregroundStyle(DS.Palette.textTertiary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                }
-                .foregroundStyle(DS.Palette.textSecondary)
                 MonitoringView(embeddedClaudeColumn: true, insightsStore: insightsStore)
                     .environmentObject(work)
             }
@@ -381,7 +368,14 @@ struct MonitoringView: View {
     /// One rule for every card label on this page: name the provider when
     /// there is another one on screen, never when there is not.
     private func labelled(_ base: String, for provider: MetricProvider) -> String {
-        isComparing ? provider.displayName + " · " + base : base
+        isComparing ? columnName(for: provider) + " · " + base : base
+    }
+
+    /// The embedded column draws Claude blocks for the second account, so its
+    /// labels name that account ("Claude W") rather than plain "Claude".
+    private func columnName(for provider: MetricProvider) -> String {
+        guard embeddedClaudeColumn else { return provider.displayName }
+        return ["Claude", settingsStore.workAccountLabel ?? ""].filter { !$0.isEmpty }.joined(separator: " ")
     }
 
     private func labelled(_ tile: TileDescriptor, for provider: MetricProvider) -> TileDescriptor {
@@ -398,6 +392,10 @@ struct MonitoringView: View {
             if showsClaude, usageStore.planType != .unknown {
                 planBadge(.claude, usageStore.planType.displayLabel, DS.Palette.brandPrimary)
             }
+            if visibleProviders.contains(.claudeWork),
+               let work = extraAccounts.workUsageStore, work.planType != .unknown {
+                planBadge(.claudeWork, work.planType.displayLabel, DS.Palette.brandPrimary)
+            }
             if showsCodex, codexStore.planType != .unknown {
                 planBadge(.codex, codexStore.planType.displayLabel, codexStore.planType.badgeColor)
             }
@@ -407,6 +405,10 @@ struct MonitoringView: View {
     private func planBadge(_ provider: MetricProvider, _ plan: String, _ tint: Color) -> some View {
         HStack(spacing: 4) {
             ProviderGlyph(provider: provider, size: 10)
+            if provider == .claudeWork, let label = settingsStore.workAccountLabel {
+                Text(label)
+                    .font(.system(size: 9, weight: .heavy))
+            }
             Text(plan)
                 .font(.system(size: 9, weight: .bold))
                 .tracking(0.5)
