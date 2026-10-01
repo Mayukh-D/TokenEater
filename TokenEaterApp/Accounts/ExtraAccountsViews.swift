@@ -45,6 +45,9 @@ private struct ExtraAccountProviderCard: View {
     @State private var enabled = true
     @State private var label = ""
     @State private var isChecking = false
+    @State private var isResetting = false
+    @State private var resultMessage: String?
+    @State private var resultSucceeded = false
 
     private var usage: ExtraAccountUsage? { extraAccounts.usage[account.service] }
 
@@ -73,6 +76,50 @@ private struct ExtraAccountProviderCard: View {
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            card
+            // Under the card, like the Claude and Codex results, so the card
+            // never changes height when a button is pressed.
+            if let resultMessage {
+                Text(resultMessage)
+                    .font(.system(size: 11))
+                    .foregroundStyle(resultSucceeded ? .green : .orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, DS.Spacing.xs)
+            }
+        }
+    }
+
+    /// Same contract as the Claude card's buttons: check re-reads usage,
+    /// reset drops the cached token and reads the Keychain item afresh.
+    private func check() {
+        isChecking = true
+        resultMessage = nil
+        Task {
+            if let store { await store.refresh(force: true) }
+            await extraAccounts.refresh()
+            isChecking = false
+            let error = store.flatMap { $0.errorState == .none ? nil : $0.authFailureHint } ?? usage?.error
+            resultSucceeded = error == nil
+            resultMessage = error ?? String(localized: "connect.oauth.success")
+        }
+    }
+
+    private func reset() {
+        isResetting = true
+        resultMessage = nil
+        Task {
+            if let store {
+                let result = await store.resetConnection()
+                resultSucceeded = result.success
+                resultMessage = result.success ? String(localized: "settings.providers.reset.done") : result.message
+            }
+            await extraAccounts.refresh()
+            isResetting = false
+        }
+    }
+
+    private var card: some View {
         ProviderCard(
             provider: .claude,
             name: "Claude · \(account.label)",
@@ -85,39 +132,25 @@ private struct ExtraAccountProviderCard: View {
                 Text("extraAccounts.name")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(DS.Palette.textTertiary)
+                // Sized to sit level with the Check connection capsule.
                 TextField(String(localized: "extraAccounts.label"), text: $label)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .multilineTextAlignment(.center)
-                    .frame(width: 44)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .frame(width: 56)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule().fill(Color.white.opacity(0.08))
+                            .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                    )
                     .onSubmit { extraAccounts.setLabel(label, for: account.service) }
                     .onChange(of: label) { _, new in
                         if new.count > 6 { label = String(new.prefix(6)) }
                     }
                     .help(String(localized: "extraAccounts.label.help"))
 
-                Button {
-                    isChecking = true
-                    Task {
-                        if let store { await store.refresh(force: true) }
-                        await extraAccounts.refresh()
-                        isChecking = false
-                    }
-                } label: {
-                    Text(isChecking ? String(localized: "extraAccounts.refreshing") : String(localized: "extraAccounts.check"))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(DS.Palette.textSecondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule().fill(Color.white.opacity(0.06))
-                                .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(isChecking)
+                providerResetButton(isRunning: isResetting, action: reset)
+                providerCheckButton(isRunning: isChecking, action: check)
 
                 Button {
                     extraAccounts.remove(account.service)

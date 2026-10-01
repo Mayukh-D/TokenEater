@@ -606,9 +606,17 @@ private struct PlanBadgeCell: View {
             // every other label on this surface.
             if visible.count > 1 {
                 ProviderGlyph(provider: provider, size: 7)
+                // Both Claude accounts share the mark, so the second one
+                // carries its short name to tell the two badges apart.
+                if provider == .claudeWork, let label = settingsStore.workAccountLabel {
+                    Text(label)
+                }
             }
             Text(plan)
         }
+        // Three providers can crowd the row; a badge shrinks before it wraps.
+        .lineLimit(1)
+        .fixedSize()
         .font(.system(size: 8, weight: .bold))
         .foregroundStyle(.white)
         .padding(.horizontal, 5)
