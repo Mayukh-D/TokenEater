@@ -105,9 +105,24 @@ final class SettingsStore: ObservableObject {
     /// same thing.
     var availableProviderModes: [ProviderMode] {
         let providers = activeProviders
-        guard providers.count > 1 else { return [] }
-        return [.all] + providers.compactMap { provider in
+        var modes: [ProviderMode] = providers.compactMap { provider in
             ProviderMode.allCases.first { $0.provider == provider }
+        }
+        if workAccountLabel != nil, let index = modes.firstIndex(of: .claude) {
+            modes.insert(.claudeWork, at: index + 1)
+        }
+        guard modes.count > 1 else { return [] }
+        return [.all] + modes
+    }
+
+    /// Short label of the second Claude account when one is tracked, nil
+    /// otherwise. Set by the app once the account has been discovered; the
+    /// Claude Work mode only exists while this is non-nil.
+    @Published var workAccountLabel: String? {
+        didSet {
+            if workAccountLabel == nil, activeProviderMode == .claudeWork {
+                activeProviderMode = .claude
+            }
         }
     }
 

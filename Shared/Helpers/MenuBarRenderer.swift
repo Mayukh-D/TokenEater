@@ -721,3 +721,74 @@ enum MenuBarRenderer {
         return img
     }
 }
+
+// MARK: - Extra Claude accounts
+
+extension MenuBarRenderer {
+    /// One extra Claude account as the menu bar draws it: a muted label, then
+    /// the same tinted pills the main account uses.
+    struct ExtraAccountSegment: Equatable {
+        let label: String
+        let fiveHourPct: Int?
+        let fiveHourResetDate: Date?
+        let sevenDayPct: Int?
+        let sevenDayResetDate: Date?
+    }
+
+    /// The main menu bar image with each extra account appended after a
+    /// hairline divider. Returns `base` untouched when there is nothing to add.
+    static func appendingExtraAccounts(_ accounts: [ExtraAccountSegment], to base: NSImage, data: RenderData) -> NSImage {
+        let groups: [[SegmentVisual]] = accounts.compactMap { account in
+            var visuals: [SegmentVisual] = []
+            let labelText = NSAttributedString(string: account.label, attributes: [
+                .font: systemFont(10, .heavy),
+                .foregroundColor: NSColor.secondaryLabelColor
+            ])
+            if let pct = account.fiveHourPct {
+                visuals.append(SegmentVisual(id: UUID(), content: .pill(
+                    text: "\(pct)%",
+                    tint: colorForPct(pct, resetDate: account.fiveHourResetDate, windowDuration: 5 * 3600, data: data)
+                )))
+            }
+            if let pct = account.sevenDayPct {
+                visuals.append(SegmentVisual(id: UUID(), content: .pill(
+                    text: "\(pct)%",
+                    tint: colorForPct(pct, resetDate: account.sevenDayResetDate, windowDuration: 7 * 86400, data: data)
+                )))
+            }
+            guard !visuals.isEmpty else { return nil }
+            return [SegmentVisual(id: UUID(), content: .run(labelText))] + visuals
+        }
+        guard !groups.isEmpty else { return base }
+
+        let dividerGap: CGFloat = 8
+        let labelGap: CGFloat = 4
+        func groupWidth(_ g: [SegmentVisual]) -> CGFloat {
+            let widths = g.map { visualWidth($0) }
+            return widths.reduce(0, +) + labelGap + segmentGap * CGFloat(max(g.count - 2, 0))
+        }
+        let extrasWidth = groups.map { dividerGap * 2 + 1 + groupWidth($0) }.reduce(0, +)
+        let size = NSSize(width: ceil(base.size.width + extrasWidth) + 1, height: imageHeight)
+
+        let img = NSImage(size: size, flipped: false) { _ in
+            base.draw(at: NSPoint(x: 0, y: (imageHeight - base.size.height) / 2),
+                      from: .zero, operation: .sourceOver, fraction: 1)
+            var x = base.size.width
+            for group in groups {
+                x += dividerGap
+                NSColor.tertiaryLabelColor.setFill()
+                NSRect(x: x, y: 5, width: 1, height: imageHeight - 10).fill()
+                x += 1 + dividerGap
+                for (i, v) in group.enumerated() {
+                    let w = visualWidth(v)
+                    drawVisual(v, at: x, width: w)
+                    x += w + (i == 0 ? labelGap : segmentGap)
+                }
+                x -= segmentGap
+            }
+            return true
+        }
+        img.isTemplate = false
+        return img
+    }
+}

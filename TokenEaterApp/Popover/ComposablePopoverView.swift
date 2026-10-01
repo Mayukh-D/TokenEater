@@ -72,8 +72,6 @@ struct ComposablePopoverView: View {
             }
 
             PopoverGrid()
-
-            ExtraAccountsPopoverSection()
         }
         .frame(width: Self.popoverWidth)
         .background(Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 1)))

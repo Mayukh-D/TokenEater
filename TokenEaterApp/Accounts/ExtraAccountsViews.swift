@@ -1,87 +1,21 @@
 import SwiftUI
 
-// MARK: - Popover
+// MARK: - Account scope
 
-/// One row per extra Claude account under the popover grid. Draws nothing
-/// when no extra account is enabled, so single-account users see no change.
-struct ExtraAccountsPopoverSection: View {
+/// In Claude Work mode, hands every view below it the work account's
+/// `UsageStore` in place of the main one. All the existing Claude cells,
+/// the plan badge, pacing and the dashboard then show that account as-is.
+struct ClaudeAccountScope<Content: View>: View {
+    @EnvironmentObject private var settingsStore: SettingsStore
     @EnvironmentObject private var extraAccounts: ExtraAccountsStore
-    @EnvironmentObject private var themeStore: ThemeStore
+    @ViewBuilder let content: () -> Content
 
     var body: some View {
-        let rows = extraAccounts.enabledAccounts
-        if !rows.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Other Claude accounts")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
-                ForEach(rows) { account in
-                    ExtraAccountRow(account: account, usage: extraAccounts.usage[account.service], themeStore: themeStore)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 12)
+        if settingsStore.activeProviderMode == .claudeWork, let work = extraAccounts.workUsageStore {
+            content().environmentObject(work)
+        } else {
+            content()
         }
-    }
-}
-
-private struct ExtraAccountRow: View {
-    let account: ExtraClaudeAccount
-    let usage: ExtraAccountUsage?
-    @ObservedObject var themeStore: ThemeStore
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Text(account.label)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
-                Text(usage?.email ?? "")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer(minLength: 0)
-            }
-            if let error = usage?.error {
-                Text(error)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.orange.opacity(0.85))
-            } else if let usage {
-                HStack(spacing: 10) {
-                    meter("5h", usage.fiveHour, resets: usage.fiveHourResetsAt)
-                    meter("7d", usage.sevenDay, resets: usage.sevenDayResetsAt)
-                }
-            } else {
-                Text("Loading…")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.4))
-            }
-        }
-    }
-
-    private func meter(_ title: String, _ pct: Double?, resets: Date?) -> some View {
-        let value = pct ?? 0
-        let color = Color(nsColor: themeStore.menuBarNSColor(for: Int(value.rounded())))
-        return VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                Text(title).foregroundStyle(.white.opacity(0.5))
-                Text(pct.map { "\(Int($0.rounded()))%" } ?? "–").foregroundStyle(.white)
-                Spacer(minLength: 0)
-                if let resets {
-                    Text(resets, style: .relative).foregroundStyle(.white.opacity(0.35))
-                }
-            }
-            .font(.system(size: 10, weight: .medium).monospacedDigit())
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.08))
-                    Capsule().fill(color).frame(width: geo.size.width * min(max(value / 100, 0), 1))
-                }
-            }
-            .frame(height: 4)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 

@@ -301,6 +301,28 @@ final class StatusBarController: NSObject {
         themeStore.syncToSharedFile()
 
         extraAccountsStore.proxyConfig = settingsStore.proxyConfig
+        extraAccountsStore.configureWorkStore = { [weak self] store in
+            guard let self else { return }
+            // Same settings as the main account, minus notifications: with no
+            // toggles provider the store never notifies, so the work account
+            // cannot send alerts that read as if they were the main one's.
+            store.proxyConfig = self.settingsStore.proxyConfig
+            store.pacingMargin = self.settingsStore.pacingMargin
+            store.pacingSchedule = self.settingsStore.pacingSchedule
+            store.refreshIntervalSeconds = TimeInterval(self.settingsStore.refreshInterval)
+            store.reloadConfig(thresholds: self.themeStore.thresholds)
+            store.startAutoRefresh(thresholds: self.themeStore.thresholds)
+        }
+        extraAccountsStore.$accounts.combineLatest(extraAccountsStore.$workUsageStore)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] accounts, work in
+                guard let self else { return }
+                let label = work == nil ? nil : accounts.first(where: \.enabled)?.label
+                if self.settingsStore.workAccountLabel != label {
+                    self.settingsStore.workAccountLabel = label
+                }
+            }
+            .store(in: &cancellables)
         extraAccountsStore.start(interval: TimeInterval(settingsStore.refreshInterval))
 
         // Monitor token files (credentials + config.json) for changes
@@ -431,21 +453,12 @@ final class StatusBarController: NSObject {
             menuBarRepaintDeferred = true
             return
         }
-        let image = MenuBarRenderer.render(
-            .live(usage: usageStore, theme: themeStore, settings: settingsStore, vendor: vendorStatusStore, codex: codexStore)
-        )
-        statusItem.button?.image = image
-        let extra = extraAccountsStore.menuBarText
-        if extra.isEmpty {
-            statusItem.button?.attributedTitle = NSAttributedString()
-            statusItem.button?.imagePosition = .imageOnly
-        } else {
-            statusItem.button?.attributedTitle = NSAttributedString(
-                string: " " + extra,
-                attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)]
-            )
-            statusItem.button?.imagePosition = .imageLeft
-        }
+        let data = MenuBarRenderer.RenderData.live(usage: usageStore, theme: themeStore, settings: settingsStore, vendor: vendorStatusStore, codex: codexStore)
+        let extras = extraAccountsStore.menuBarSegments
+        let base = MenuBarRenderer.render(data)
+        statusItem.button?.image = extras.isEmpty
+            ? base
+            : MenuBarRenderer.appendingExtraAccounts(extras, to: base, data: data)
     }
 
     /// Run a 1-second redraw ONLY while an outage badge is visible, so the
@@ -772,7 +785,7 @@ final class StatusBarController: NSObject {
             return
         }
 
-        let appView = MainAppView()
+        let appView = ClaudeAccountScope { MainAppView() }
             .environmentObject(usageStore)
             .environmentObject(codexStore)
             .environmentObject(themeStore)

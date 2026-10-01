@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import Security
 import os.log
 
@@ -40,11 +41,21 @@ final class ExtraAccountsStore: ObservableObject {
     @Published private(set) var usage: [String: ExtraAccountUsage] = [:]
     @Published private(set) var isRefreshing = false
 
+    /// A full `UsageStore` for the first enabled extra account. The Claude
+    /// Work mode swaps it in for the main store, so every popover cell, the
+    /// plan badge and pacing read that account with no new UI.
+    @Published private(set) var workUsageStore: UsageStore?
+
     var proxyConfig: ProxyConfig?
+    /// Applies the app's settings (pacing, thresholds, refresh interval) to a
+    /// freshly built work store and starts its auto-refresh.
+    var configureWorkStore: ((UsageStore) -> Void)?
 
     private let apiClient: APIClientProtocol
     private let defaults: UserDefaults
     private var timer: Timer?
+    private var workService: String?
+    private var workCancellable: AnyCancellable?
 
     init(apiClient: APIClientProtocol = APIClient(), defaults: UserDefaults = .standard) {
         self.apiClient = apiClient
@@ -61,6 +72,7 @@ final class ExtraAccountsStore: ObservableObject {
 
     func start(interval: TimeInterval) {
         discover()
+        rebuildWorkStore()
         Task { await refresh() }
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: max(interval, 60), repeats: true) { [weak self] _ in
@@ -83,6 +95,7 @@ final class ExtraAccountsStore: ObservableObject {
             ExtraClaudeAccount(service: service, label: "C\(next + offset + 2)", enabled: true)
         }
         save()
+        rebuildWorkStore()
     }
 
     private static func listExtraServices() -> [String] {
@@ -107,12 +120,14 @@ final class ExtraAccountsStore: ObservableObject {
         guard let index = accounts.firstIndex(where: { $0.service == service }) else { return }
         accounts[index].label = String(label.prefix(6))
         save()
+        objectWillChange.send()
     }
 
     func setEnabled(_ enabled: Bool, for service: String) {
         guard let index = accounts.firstIndex(where: { $0.service == service }) else { return }
         accounts[index].enabled = enabled
         save()
+        rebuildWorkStore()
         if enabled { Task { await refresh() } }
     }
 
@@ -120,6 +135,7 @@ final class ExtraAccountsStore: ObservableObject {
         accounts.removeAll { $0.service == service }
         usage[service] = nil
         save()
+        rebuildWorkStore()
     }
 
     private func save() {
@@ -135,6 +151,13 @@ final class ExtraAccountsStore: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
         for account in enabledAccounts {
+            if account.service == workService {
+                // Its UsageStore polls usage; only the email is needed here.
+                if usage[account.service]?.email == nil {
+                    usage[account.service] = await fetchEmailOnly(account)
+                }
+                continue
+            }
             usage[account.service] = await fetch(account)
         }
     }
@@ -174,16 +197,85 @@ final class ExtraAccountsStore: ObservableObject {
         return result
     }
 
+    private func fetchEmailOnly(_ account: ExtraClaudeAccount) async -> ExtraAccountUsage {
+        var result = usage[account.service] ?? ExtraAccountUsage(updatedAt: Date())
+        let service = account.service
+        let read = await Task.detached { SecurityCLIReader(service: service).read() }.value
+        if let token = read.token,
+           let profile = try? await apiClient.fetchProfile(token: token, proxyConfig: proxyConfig) {
+            result.email = profile.account.email
+        }
+        return result
+    }
+
+    // MARK: - Work account store
+
+    /// Keeps `workUsageStore` pointed at the first enabled extra account,
+    /// building a new one only when that account changes.
+    private func rebuildWorkStore() {
+        let target = enabledAccounts.first?.service
+        guard target != workService else { return }
+        workUsageStore?.stopAutoRefresh()
+        workCancellable = nil
+        workService = target
+        guard let service = target else {
+            workUsageStore = nil
+            return
+        }
+
+        let suffix = service.replacingOccurrences(of: Self.primaryService + "-", with: "")
+            .filter { $0.isLetter || $0.isNumber }
+        let sharedFile = SharedFileService(fileName: "shared-\(suffix).json")
+        let tokenProvider = TokenProvider(
+            securityCLIReader: SecurityCLIReader(service: service),
+            credentialsFileReader: CredentialsFileReader(filePath: ""),
+            configReader: NoClaudeDesktopConfig(),
+            keychainReader: { _ in nil }
+        )
+        let store = UsageStore(
+            repository: UsageRepository(apiClient: apiClient, sharedFileService: sharedFile),
+            tokenProvider: tokenProvider,
+            sharedFileService: sharedFile,
+            sessionSamplesKey: "sessionPacingSamples.\(suffix)"
+        )
+        // Re-publish its changes so the menu bar and any view observing this
+        // store repaint when the work account updates.
+        workCancellable = store.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+        workUsageStore = store
+        configureWorkStore?(store)
+    }
+
     // MARK: - Display
 
-    /// Compact menu bar text, e.g. "C2 12%·40%  C3 3%·8%". Empty when there
-    /// is nothing to show.
-    var menuBarText: String {
+    /// What the menu bar draws after the main account: one labelled pair of
+    /// pills per enabled account that has data.
+    var menuBarSegments: [MenuBarRenderer.ExtraAccountSegment] {
         enabledAccounts.compactMap { account in
-            guard let u = usage[account.service], u.error == nil, let five = u.fiveHour else { return nil }
-            let week = u.sevenDay.map { "·\(Int($0.rounded()))%" } ?? ""
-            return "\(account.label) \(Int(five.rounded()))%\(week)"
+            if account.service == workService, let store = workUsageStore {
+                guard store.hasConfig, store.errorState == .none, store.lastUpdate != nil else { return nil }
+                return MenuBarRenderer.ExtraAccountSegment(
+                    label: account.label,
+                    fiveHourPct: store.fiveHourPct,
+                    fiveHourResetDate: store.lastUsage?.fiveHour?.resetsAtDate,
+                    sevenDayPct: store.sevenDayPct,
+                    sevenDayResetDate: store.lastUsage?.sevenDay?.resetsAtDate
+                )
+            }
+            guard let u = usage[account.service], u.error == nil, u.fiveHour != nil || u.sevenDay != nil else { return nil }
+            return MenuBarRenderer.ExtraAccountSegment(
+                label: account.label,
+                fiveHourPct: u.fiveHour.map { Int($0.rounded()) },
+                fiveHourResetDate: u.fiveHourResetsAt,
+                sevenDayPct: u.sevenDay.map { Int($0.rounded()) },
+                sevenDayResetDate: u.sevenDayResetsAt
+            )
         }
-        .joined(separator: "  ")
     }
+}
+
+/// The work account has no Claude Desktop login to fall back on: its token
+/// comes from its own Keychain item or nowhere.
+private struct NoClaudeDesktopConfig: ClaudeConfigReaderProtocol {
+    func readEncryptedToken() -> String? { nil }
 }
