@@ -2,19 +2,20 @@
   <img src="TokenEaterApp/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="128" height="128" alt="TokenEater">
 </p>
 
-<h1 align="center">TokenEater</h1>
+<h1 align="center">TokenEater · Multi-Account Fork</h1>
 
 <p align="center">
-  <strong>Monitor your Claude and Codex usage limits directly from your macOS desktop.</strong>
+  <strong>Monitor your Claude and Codex usage limits directly from your macOS desktop, now with a second Claude account.</strong><br>
+  <sub>An unofficial fork of <a href="https://github.com/AThevon/TokenEater">AThevon/TokenEater</a>. Not made or endorsed by the original author or by Anthropic.</sub>
 </p>
 
 <p align="center">
-  <a href="https://tokeneater.athevon.dev">Website</a> ·
-  <a href="#install">Install</a> ·
+  <a href="#install-this-fork">Install</a> ·
+  <a href="#what-the-fork-adds">What the fork adds</a> ·
   <a href="#what-you-get">Features</a> ·
   <a href="#privacy-read-only-usage-calls">Privacy</a> ·
-  <a href="https://tokeneater.athevon.dev/en/docs">Docs</a> ·
-  <a href="https://github.com/AThevon/TokenEater/releases">Releases</a>
+  <a href="https://github.com/Mayukh-D/TokenEater/releases">Releases</a> ·
+  <a href="https://github.com/AThevon/TokenEater">Original project</a>
 </p>
 
 <p align="center">
@@ -23,11 +24,96 @@
   <img src="https://img.shields.io/badge/WidgetKit-native-007AFF?logo=apple&logoColor=white" alt="WidgetKit">
   <img src="https://img.shields.io/badge/Claude-Pro%20%2F%20Max%20%2F%20Team-D97706" alt="Claude Pro / Max / Team">
   <img src="https://img.shields.io/badge/Codex-ChatGPT%20sign--in-10A37F" alt="OpenAI Codex with ChatGPT sign-in">
-  <img src="https://img.shields.io/github/downloads/AThevon/TokenEater/total?color=F97316" alt="Downloads">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
-  <img src="https://img.shields.io/github/v/release/AThevon/TokenEater?color=F97316" alt="Release">
-  <a href="https://github.com/sponsors/AThevon"><img src="https://img.shields.io/badge/Sponsor-EA4AAA?logo=githubsponsors&logoColor=white" alt="Sponsor on GitHub"></a>
+  <img src="https://img.shields.io/github/v/release/Mayukh-D/TokenEater?include_prereleases&color=F97316&label=fork%20release" alt="Fork release">
+  <img src="https://img.shields.io/badge/notarized-no-lightgrey" alt="Not notarized">
 </p>
+
+---
+
+> [!NOTE]
+> **This fork adds multiple Claude accounts.** It tracks a second Claude Code login (for example a personal and a work account) as a provider of its own, next to Claude and Codex, with no logging in and out. Everything else is [AThevon/TokenEater](https://github.com/AThevon/TokenEater), and all credit for the app goes there. The change is proposed upstream in [#284](https://github.com/AThevon/TokenEater/pull/284).
+
+### Why this fork exists
+
+When I started my new job I ended up with a work Claude account alongside my personal one, and I realised the need almost immediately. TokenEater had become how I keep an eye on my limits, and logging in and out of Claude Code to check the other account defeated the point. So I built the version I wanted, matching the app's own design as closely as I could, and proposed it upstream.
+
+<p align="center">
+  <img src="docs/fork/4-dashboard-all.png" alt="Dashboard in All mode: Claude, the second Claude account and OpenAI side by side" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/fork/1-popover-all.png" alt="Popover, All mode" width="100%"><br><sub><b>Popover, All</b><br>both accounts and Codex</sub></td>
+    <td align="center" width="33%"><img src="docs/fork/2-popover-work.png" alt="Popover in the second account's mode" width="100%"><br><sub><b>Second account's mode</b><br>its own plan, hero and pacing</sub></td>
+    <td align="center" width="33%"><img src="docs/fork/5-studio-menubar.png" alt="Studio, menu bar editor scoped to the second account" width="100%"><br><sub><b>Studio</b><br>its own segments and styles</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/fork/3-menubar.png" alt="Menu bar with pills for both Claude accounts" width="70%"><br>
+  <sub>Menu bar: your pills, then the second account's, labelled with its short name</sub>
+</p>
+
+<p align="center">
+  <img src="docs/fork/6-settings-providers.png" alt="Settings, Providers: the second account as its own provider card" width="85%"><br>
+  <sub>Settings &gt; Providers: each extra account gets the same card, toggle and connection buttons</sub>
+</p>
+
+### What the fork adds
+
+| | |
+|---|---|
+| **Its own mode** | A fourth dot in the switcher: All · Claude · your second account · Codex |
+| **Side by side** | All mode shows both Claude accounts in the popover, the menu bar and as a third dashboard column |
+| **Same design** | The second account uses the app's own cells, pills, hero and pacing cards, so nothing looks bolted on |
+| **Studio** | Every scope lists the second account's metrics under their own heading, to place and style like any other |
+| **Short name** | You choose how it is labelled (up to 6 characters, like `W` or `Work`) in Settings > Providers |
+| **Read-only** | Same contract as upstream: it reads each login from the Keychain and never writes or refreshes a token |
+
+### Install this fork
+
+1. Download the latest `.dmg` from [this fork's releases](https://github.com/Mayukh-D/TokenEater/releases) and open it.
+2. Drag **TokenEater** onto **Applications**. It replaces the official TokenEater if you have it; don't run both.
+3. Open it. macOS will say it can't check the app for malware: unlike the official release, this build is **not notarized by Apple** (that needs a paid developer account). Click **Done**, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**.
+4. When asked, allow access to the `Claude Code-credentials` Keychain item.
+
+**Updates.** This build has its own app identity and **does not auto-update**, so the official updater can never replace it. New versions appear on [the releases page](https://github.com/Mayukh-D/TokenEater/releases), each with a SHA-256 checksum; **Settings** links there too. To update, download the new DMG and drag it over the old app.
+
+**Uninstall.**
+
+```bash
+rm -rf /Applications/TokenEater.app
+rm -rf ~/Library/Application\ Support/com.tokeneater.shared   # usage cache shared with the widgets
+defaults delete com.mayukhd.tokeneater-multi                  # this fork's settings
+```
+
+**Want the official app instead?** Get it from [AThevon/TokenEater](https://github.com/AThevon/TokenEater#install): it is notarized by Apple and updates itself, but tracks one Claude account.
+
+### Set up a second account
+
+Claude Code keeps each config directory's login separately, so log the second account in under its own:
+
+```bash
+CLAUDE_CONFIG_DIR=~/.claude-work claude   # then /login with the other account
+```
+
+TokenEater picks it up on its own (or press **Scan & refresh** in Settings > Providers). macOS asks once to allow Keychain access for it; choose **Always Allow**.
+
+### Build this fork
+
+Releases are built from the [`fork-release`](https://github.com/Mayukh-D/TokenEater/tree/fork-release) branch with its packaging script, which also checks the app identity, licence, signatures and widget sandbox:
+
+```bash
+git clone -b fork-release https://github.com/Mayukh-D/TokenEater.git
+cd TokenEater
+brew install xcodegen          # also needs Xcode
+scripts/package-fork.sh        # builds the app and dist/TokenEater-MultiAccount-*.dmg
+```
+
+Local builds are not notarized either, so the first launch needs **System Settings → Privacy & Security → Open Anyway**.
+
+> The rest of this page is adapted from the original TokenEater README. It describes the app as a whole, which this fork shares.
 
 ---
 
@@ -61,59 +147,7 @@ A native menu bar app, desktop widgets, and a floating overlay that track your C
 - **Themes.** Four presets plus full custom colors, a glow or flat look, and configurable warning thresholds.
 - **Notifications.** Per-event toggles for each provider: escalation, recovery, pacing, scheduled reset reminders, extra credits, token expiry. Every alert names the provider it is about.
 
-Everything in detail on the [website](https://tokeneater.athevon.dev).
-
-## Install
-
-### Download DMG (recommended)
-
-**[Download TokenEater.dmg](https://github.com/AThevon/TokenEater/releases/latest/download/TokenEater.dmg)**
-
-Open the DMG, drag TokenEater to Applications, and launch it. The DMG is signed with a Developer ID and notarized by Apple, so Gatekeeper lets it run on first launch without any extra steps.
-
-### Homebrew
-
-```bash
-brew tap AThevon/tokeneater
-brew trust AThevon/tokeneater
-brew install --cask tokeneater
-```
-
-> `brew trust` is required on Homebrew 6.0+, which no longer loads a third-party tap until you trust it.
-
-### First setup
-
-**Prerequisites:** at least one of [Claude Code](https://docs.anthropic.com/en/docs/claude-code) signed in on a **Pro, Max, or Team plan** (`claude` then `/login`), or the [Codex CLI](https://github.com/openai/codex) signed in with your **ChatGPT account** (`codex login`).
-
-1. Open TokenEater: a guided setup detects the providers on your Mac and walks you through connecting the ones you use
-2. Right-click on the desktop > **Edit Widgets** > search "TokenEater"
-
-## Update
-
-TokenEater checks for updates automatically. When a new version is available, a modal lets you download and install it in-app; macOS will ask for your admin password to replace the app in `/Applications`.
-
-If you installed via Homebrew: `brew update && brew upgrade --cask tokeneater`
-
-## Uninstall
-
-Delete `TokenEater.app` from Applications, then optionally clean up shared data:
-
-```bash
-rm -rf /Applications/TokenEater.app
-rm -rf ~/Library/Application\ Support/com.tokeneater.shared
-```
-
-If you installed via Homebrew: `brew uninstall --cask tokeneater`. For a complete wipe, caches and widget state included, use the clean reset in the [troubleshooting guide](docs/TROUBLESHOOTING.md).
-
-## Build it yourself
-
-```bash
-git clone https://github.com/AThevon/TokenEater.git
-cd TokenEater
-./build.sh
-```
-
-The script checks Xcode, installs XcodeGen if needed, and assembles the app. Local builds are not notarized, so Gatekeeper blocks the first launch (right-click > Open, or System Settings > Privacy & Security > Open Anyway). The step-by-step walkthrough is in [`SETUP.md`](SETUP.md).
+Everything in detail on the [original TokenEater website](https://tokeneater.athevon.dev).
 
 ## Privacy: read-only usage calls
 
@@ -127,6 +161,8 @@ Everything the app does with the token:
 When Codex tracking is enabled, the app also reads the Codex CLI access token from `~/.codex/auth.json` (or `CODEX_HOME`) and makes one additional authenticated call:
 
 - `GET chatgpt.com/backend-api/wham/usage`, your Codex usage windows and credits
+
+**This fork additionally** looks for other Claude Code logins (Keychain items named `Claude Code-credentials-…`, one per `CLAUDE_CONFIG_DIR`). It lists Keychain items by name only to find them, never reading any other item's contents, then reads each one it finds through the same `security` tool, after you approve access once per account. Each extra account's token makes the same two read-only calls above, and nothing else.
 
 These usage and profile calls are read-only. TokenEater does not send messages, read conversations, or modify either account. Each access token is sent only to its own provider. TokenEater never writes to either provider's credentials and never refreshes their tokens: if one expires, open Claude Code or Codex (or run `codex login`) and it picks the new one up. API-key and keyring-only Codex logins are not supported in this version.
 
@@ -151,7 +187,7 @@ In **Edit Widgets > TokenEater**, choose **Codex Usage** (small or medium) along
 | "Authorization needed" that will not go away | A cached credential went stale, or a second Keychain item shadows your login | **Settings > Providers > Reset connection**: it rereads everything from scratch and keeps all your settings. **Copy diagnostic** says which case you are in |
 | Widget stuck or not updating | macOS caches widget extensions aggressively | Remove the widget, run the clean reset, re-add the widget |
 
-Anything deeper, including the full clean reset that wipes caches, preferences, and widget state, lives in the [troubleshooting guide](docs/TROUBLESHOOTING.md).
+Anything deeper, including the full clean reset that wipes caches, preferences, and widget state, lives in the [troubleshooting guide](docs/TROUBLESHOOTING.md). It is written for the official app: with this fork, use `com.mayukhd.tokeneater-multi` wherever it says `com.tokeneater.app`.
 
 ## Documentation
 
@@ -167,16 +203,17 @@ Contributions are welcome: bug reports, feature ideas, and code PRs all help. St
 
 ## Support
 
-TokenEater is free and open source. If it saves you from hitting your limits blindly, you can [sponsor its development on GitHub](https://github.com/sponsors/AThevon).
+TokenEater is free and open source, and this fork exists because of it. If it saves you from hitting your limits blindly, you can [sponsor the original author on GitHub](https://github.com/sponsors/AThevon).
 
 ## License
 
-MIT
+MIT. The original work is © 2026 AThevon; see [LICENSE](LICENSE), which also ships inside the app and the DMG. The multi-account additions are released under the same licence.
 
 ---
 
 <p align="center">
-  Built by <a href="https://athevon.dev"><strong>Adrien Thevon</strong></a>, software engineer in Toulouse.
+  TokenEater built by <a href="https://athevon.dev"><strong>Adrien Thevon</strong></a>, software engineer in Toulouse.<br>
+  Multi-account fork by <a href="https://github.com/Mayukh-D"><strong>Mayukh Das</strong></a>.
   <br />
   <sub>
     Also mine:
