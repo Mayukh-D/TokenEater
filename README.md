@@ -71,6 +71,15 @@ When I started my new job I ended up with a work Claude account alongside my per
 | **Short name** | You choose how it is labelled (up to 6 characters, like `W` or `Work`) in Settings > Providers |
 | **Read-only** | Same contract as upstream: it reads each login from the Keychain and never writes or refreshes a token |
 
+### Install this fork
+
+1. Download the latest `.dmg` from [this fork's releases](https://github.com/Mayukh-D/TokenEater/releases) and open it.
+2. Drag **TokenEater** onto **Applications**. It replaces the official TokenEater if you have it; don't run both.
+3. Open it. macOS will say it can't check the app for malware: unlike the official release, this build is **not notarized by Apple** (that needs a paid developer account). Click **Done**, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**.
+4. When asked, allow access to the `Claude Code-credentials` Keychain item.
+
+The fork has its own app identity and no auto-update, so the official updater can never replace it. New versions appear on the releases page, each with a SHA-256 checksum to verify the download.
+
 ### Set up a second account
 
 Claude Code keeps each config directory's login separately, so log the second account in under its own:
@@ -128,7 +137,9 @@ A native menu bar app, desktop widgets, and a floating overlay that track your C
 
 Everything in detail on the [website](https://tokeneater.athevon.dev).
 
-## Install
+## Install the official TokenEater (not this fork)
+
+> The rest of this README is the original author's and describes **the official app**. For this fork's build, see [Install this fork](#install-this-fork) above.
 
 ### Download DMG (recommended)
 
