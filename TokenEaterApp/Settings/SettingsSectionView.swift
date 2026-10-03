@@ -26,6 +26,17 @@ struct SettingsSectionView: View {
             // pending version straight away).
             glassCard {
                 VStack(alignment: .leading, spacing: 10) {
+                    #if FORK_BUILD
+                    HStack {
+                        Text("TokenEater v\(updateStore.currentVersion) · unofficial multi-account fork")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.5))
+                        Spacer()
+                        Link("Updates on GitHub", destination: URL(string: "https://github.com/Mayukh-D/TokenEater/releases")!)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.blue)
+                    }
+                    #else
                     HStack {
                         Text("TokenEater v\(updateStore.currentVersion)")
                             .font(.system(size: 12))
@@ -55,6 +66,7 @@ struct SettingsSectionView: View {
                             .foregroundStyle(.blue)
                         }
                     }
+                    #endif
 
                     if updateStore.brewMigrationState == .detected {
                         brewMigrationBanner

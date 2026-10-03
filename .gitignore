@@ -35,3 +35,4 @@ docs/superpowers/
 *.provisionprofile
 secrets.*
 credentials.*
+dist/

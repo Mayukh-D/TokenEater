@@ -54,6 +54,12 @@ final class UpdateStore: ObservableObject {
     // MARK: - Update Flow
 
     func checkForUpdates() {
+        #if FORK_BUILD
+        // The fork must never fetch or install the official release: that
+        // would replace it and drop the multi-account feature. Updates for
+        // the fork are published on its own GitHub Releases page.
+        return
+        #endif
         guard !updateState.isModalVisible else { return }
         updateState = .checking
         Task {
@@ -95,6 +101,12 @@ final class UpdateStore: ObservableObject {
     }
 
     func downloadUpdate() {
+        #if FORK_BUILD
+        // The fork must never fetch or install the official release: that
+        // would replace it and drop the multi-account feature. Updates for
+        // the fork are published on its own GitHub Releases page.
+        return
+        #endif
         guard case .available(_, let url, let signature, let expectedLength) = updateState else { return }
         updateState = .downloading(progress: 0)
         Task {
@@ -136,6 +148,12 @@ final class UpdateStore: ObservableObject {
     }
 
     func installUpdate() {
+        #if FORK_BUILD
+        // The fork must never fetch or install the official release: that
+        // would replace it and drop the multi-account feature. Updates for
+        // the fork are published on its own GitHub Releases page.
+        return
+        #endif
         guard case .downloaded(let dmgURL, let signature, let expectedLength) = updateState else { return }
 
         // Fail closed rather than escalate from a bundle we cannot vouch for.
