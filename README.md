@@ -31,6 +31,15 @@
 
 ---
 
+> [!CAUTION]
+> ## ⚠️ NOT THE OFFICIAL VERSION
+>
+> **Please do the responsible thing and install the official TokenEater: [AThevon/TokenEater](https://github.com/AThevon/TokenEater).** It is maintained, notarized by Apple, and updates itself.
+>
+> This fork is not official in the least. It is something I built around my own annoyances, by vibe coding, and it is not reviewed, supported or endorsed by the original author or by Anthropic. If you still want to try it, proceed with caution and at your own risk.
+>
+> **[→ Get the official TokenEater](https://github.com/AThevon/TokenEater#install)**
+
 > [!NOTE]
 > **This fork adds multiple Claude accounts.** It tracks a second Claude Code login (for example a personal and a work account) as a provider of its own, next to Claude and Codex, with no logging in and out. Everything else is [AThevon/TokenEater](https://github.com/AThevon/TokenEater), and all credit for the app goes there. The change is proposed upstream in [#284](https://github.com/AThevon/TokenEater/pull/284).
 
@@ -72,6 +81,9 @@ When I started my new job I ended up with a work Claude account alongside my per
 | **Read-only** | Same contract as upstream: it reads each login from the Keychain and never writes or refreshes a token |
 
 ### Install this fork
+
+> [!WARNING]
+> **Unofficial, at your own risk.** Most people should [install the official TokenEater](https://github.com/AThevon/TokenEater#install) instead.
 
 1. Download the latest `.dmg` from [this fork's releases](https://github.com/Mayukh-D/TokenEater/releases) and open it.
 2. Drag **TokenEater** onto **Applications**. It replaces the official TokenEater if you have it; don't run both.
