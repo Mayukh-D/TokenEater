@@ -31,6 +31,13 @@
 
 ---
 
+> [!IMPORTANT]
+> ## I built multi-account support for TokenEater, and it's now in the official app
+>
+> I designed and built multi-account tracking in this fork and contributed it upstream as [pull request #284](https://github.com/AThevon/TokenEater/pull/284). Its core (a separate usage store per account, the per-account dashboard column, the Keychain-only token reader) is the base of the official version, and AThevon extended it to any number of accounts, each with its own name and colour, connected in Settings. It ships in TokenEater 6.1, out now as a beta, with release notes crediting us both.
+>
+> **Download the official app instead: [TokenEater releases](https://github.com/AThevon/TokenEater/releases).** It's signed, notarized by Apple and updates itself. This fork won't get further updates.
+
 > [!CAUTION]
 > ## ⚠️ NOT THE OFFICIAL VERSION
 >
